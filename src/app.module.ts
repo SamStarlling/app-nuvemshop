@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CredentialsEntity } from './modules/entities/credentials.entity';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CredentialsEntity } from './modules/entities/credentials.entity';
         };
       },
     }),
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
