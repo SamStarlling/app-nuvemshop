@@ -32,7 +32,7 @@ export class AppService {
     if (token && user_id) {
       const accessToken = this.repository.create({ user_id, token });
       this.repository.save(accessToken);
-      return { user_id, token };
+      return { clientID: user_id, accessToken: token };
     }
 
     throw new BadRequestException(error);
