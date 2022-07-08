@@ -1,4 +1,3 @@
-import { urlAuthorization } from './helpers/index';
 import { CredentialsEntity } from './modules/entities/credentials.entity';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +8,7 @@ import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService {
+  urlAuthorization = 'https://www.nuvemshop.com.br/apps/authorize/token';
   constructor(
     private readonly httpService: HttpService,
     @InjectRepository(CredentialsEntity)
@@ -17,7 +17,7 @@ export class AppService {
 
   async generateAccessCredentials(accessCode: string) {
     const { data } = await lastValueFrom(
-      this.httpService.post(urlAuthorization, {
+      this.httpService.post(this.urlAuthorization, {
         grant_type: 'authorization_code',
         client_id: 5167 || process.env.CLIENT_ID,
         client_secret:
@@ -29,12 +29,11 @@ export class AppService {
 
     const { access_token: token, user_id, error_description: error } = data;
 
-    if (token && user_id) {
-      const accessToken = this.repository.create({ user_id, token });
-      this.repository.save(accessToken);
-      return { clientID: user_id, accessToken: token };
+    if (!token && !user_id) {
+      throw new BadRequestException(error);
     }
 
-    throw new BadRequestException(error);
+    const accessToken = this.repository.create({ user_id, token });
+    return this.repository.save(accessToken);
   }
 }
