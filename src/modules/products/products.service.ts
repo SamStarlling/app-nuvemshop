@@ -29,6 +29,16 @@ export class ProductsService {
       }),
     );
   }
+
+  getOnlyImportantFieldsOfProductVariantsObject(data: []) {
+    const arrayOfImportantFields = data.map((productVariants) => {
+      const { id, product_id, price, promotional_price, stock } =
+        productVariants;
+      return { id, product_id, price, promotional_price, stock };
+    });
+    return arrayOfImportantFields;
+  }
+
   async getProductsID(userId: number) {
     const user = await this.credentialsRepository.find(userId);
     const { user_id, token } = this.getCredentials(user);
@@ -47,32 +57,9 @@ export class ProductsService {
   }
   async getAllProductsVariants(user_id: number, product_id: number) {
     const { url, user: token } = await this.getProductsID(user_id);
-    // const productsVariant = [];
-    // const fields = [
-    //   'id',
-    //   'product_id',
-    //   'name',
-    //   'price',
-    //   'promotional_price',
-    //   'stock',
-    // ];
     const urlGetAllVariants = `${url}/${product_id}/variants`;
-    // ?fields=${fields.join(',')}`;
     const { data } = await this.getHttpRequest(urlGetAllVariants, token);
-    return data;
+
+    return this.getOnlyImportantFieldsOfProductVariantsObject(data);
   }
-  // getProductVariantsID(products: []): Array<IProductVariantsID> {
-  //   return products.map((productArray: []) => {
-  //     for (let index = 0; index < productArray.length; index += 1) {
-  //       const { stock, id } = productArray[index];
-  //       if (stock < 10) {
-  //         return id;
-  //       }
-  //     }
-  //   });
-  // }
-  // async changePriceOfProducts(product_id) {}
-  // findOne(id: number) {
-  //   return `This action returns a #${id} product`;
-  // }
 }
