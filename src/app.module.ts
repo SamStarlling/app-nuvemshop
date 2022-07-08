@@ -20,7 +20,7 @@ import { ProductsModule } from './modules/products/products.module';
       useFactory: () => {
         return {
           type: 'sqlite',
-          database: 'sqlite.db',
+          database: 'credentials.db',
           synchronize: true,
           entities: [CredentialsEntity],
         };
