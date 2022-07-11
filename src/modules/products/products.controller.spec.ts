@@ -1,20 +1,33 @@
+import { HttpModule, HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { CredentialsEntity } from '../entities/credentials.entity';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 
-describe('ProductsController', () => {
-  let controller: ProductsController;
-
+describe('Products Controller', () => {
+  let productsController: ProductsController;
+  // const result = responseOfFindAllProductsId;
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      imports: [CredentialsEntity, HttpModule],
       controllers: [ProductsController],
-      providers: [ProductsService],
+      providers: [
+        ProductsService,
+        {
+          provide: getRepositoryToken(CredentialsEntity),
+          useValue: { connection: jest.fn() },
+        },
+        {
+          provide: HttpService,
+          useValue: { connection: jest.fn() },
+        },
+      ],
     }).compile();
-
-    controller = module.get<ProductsController>(ProductsController);
+    productsController = moduleRef.get<ProductsController>(ProductsController);
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(productsController).toBeDefined();
   });
 });
