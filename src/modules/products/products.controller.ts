@@ -22,6 +22,7 @@ export class ProductsController {
     @Query('product_id') product_id: string,
     @Query('order') order: string,
   ) {
+    this.productsService.isOrderValid(order);
     return await this.productsService.getOrderProductByDiscount(
       parseInt(user_id),
       parseInt(product_id),
