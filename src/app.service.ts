@@ -19,8 +19,10 @@ export class AppService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.urlAuthorization, {
         grant_type: 'authorization_code',
-        client_id: process.env.CLIENT_ID,
-        client_secret: process.env.CLIENT_SECRET,
+        client_id: 5167 || process.env.CLIENT_ID,
+        client_secret:
+          'UEF1X9sb6yKeZBFBiwjrQXYCcHW79tyaWKjbadM7Cvi0uPkD' ||
+          process.env.CLIENT_SECRET,
         code: accessCode,
       }),
     );
