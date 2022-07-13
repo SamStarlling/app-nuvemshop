@@ -1,21 +1,36 @@
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CredentialsEntity } from './../entities/credentials.entity';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+interface IProducts {
+  product_id: number;
+  valueOfDiscount: string;
+  id: number;
+  price: string;
+  promotional_price: string;
+  stock: number;
+}
 @Injectable()
 export class ProductsService {
   constructor(
     private readonly httpService: HttpService,
     @InjectRepository(CredentialsEntity)
-    private readonly credentialsRepository: Repository<CredentialsEntity>,
+    private credentialsRepository: Repository<CredentialsEntity>,
   ) {}
 
-  getCredentials(user: object) {
-    const { user_id, token } = user[0];
-    return { user_id, token };
+  async isUserValid(userId: number) {
+    const user = await this.credentialsRepository.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException(`User not found!`);
+    }
+    return user;
   }
 
   async getHttpRequest(url: string, token: string) {
@@ -30,36 +45,91 @@ export class ProductsService {
     );
   }
 
-  getOnlyImportantFieldsOfProductVariantsObject(data: []) {
-    const arrayOfImportantFields = data.map((productVariants) => {
-      const { id, product_id, price, promotional_price, stock } =
-        productVariants;
-      return { id, product_id, price, promotional_price, stock };
+  getValueOfDiscountAndIdVariants(data: []) {
+    const arrayOfDiscountAndId = [];
+    data.map((product) => {
+      const { id, product_id, price, promotional_price, stock } = product;
+      const valueOfDiscount = !promotional_price
+        ? 0
+        : (price - promotional_price).toFixed(2);
+      arrayOfDiscountAndId.push({
+        product_id,
+        valueOfDiscount,
+        id,
+        price,
+        promotional_price,
+        stock,
+      });
     });
-    return arrayOfImportantFields;
+    return arrayOfDiscountAndId;
   }
 
-  async getProductsID(userId: number) {
-    const user = await this.credentialsRepository.find(userId);
-    const { user_id, token } = this.getCredentials(user);
+  getCompareOfProductsToMajor(product1: IProducts, product2: IProducts) {
+    if (product1.valueOfDiscount > product2.valueOfDiscount) return -1;
+    if (product1.valueOfDiscount < product2.valueOfDiscount) return 1;
+    if (product1.valueOfDiscount === product2.valueOfDiscount) return 0;
+    if (!product1.valueOfDiscount) return +1;
+  }
 
-    const url = `https://api.nuvemshop.com.br/v1/${user_id}/products?fields=id`;
-    if (!user) {
-      throw new BadRequestException('User not found!');
+  getCompareOfProductsToMinor(product1: IProducts, product2: IProducts) {
+    if (product1.valueOfDiscount < product2.valueOfDiscount) return -1;
+    if (product1.valueOfDiscount > product2.valueOfDiscount) return 1;
+    if (product1.valueOfDiscount === product2.valueOfDiscount) return 0;
+    if (!product1.valueOfDiscount) return +1;
+  }
+
+  getOrderProducts(data: [], order: string) {
+    const arrayDiscountAndIdVariants =
+      this.getValueOfDiscountAndIdVariants(data);
+    if (order === 'major') {
+      return arrayDiscountAndIdVariants.sort(this.getCompareOfProductsToMajor);
     }
-    const { data } = await this.getHttpRequest(url, token);
-    return {
-      data: data, //This is array of products ID
-      url: `https://api.nuvemshop.com.br/v1/${user_id}/products`,
-      user: token,
-    };
-    // return data;
+    return arrayDiscountAndIdVariants.sort(this.getCompareOfProductsToMinor);
   }
-  async getAllProductsVariants(user_id: number, product_id: number) {
-    const { url, user: token } = await this.getProductsID(user_id);
-    const urlGetAllVariants = `${url}/${product_id}/variants`;
-    const { data } = await this.getHttpRequest(urlGetAllVariants, token);
 
-    return this.getOnlyImportantFieldsOfProductVariantsObject(data);
+  isOrderValid(order: string) {
+    if (!order) {
+      throw new BadRequestException(
+        'Params were not passed! You must pass params like order=minor or order=major',
+      );
+    } else if (
+      order.toLocaleLowerCase() !== 'minor' &&
+      order.toLocaleLowerCase() !== 'major'
+    ) {
+      throw new BadRequestException(
+        'You passed wrong parameter to order the products. This must be minor or major',
+      );
+    }
+  }
+
+  async getProductById(userId: number, product_id: number) {
+    const user = await this.isUserValid(userId);
+    const { user_id, token } = user;
+
+    const url = `https://api.nuvemshop.com.br/v1/${user_id}/products/${product_id}`;
+
+    const { data } = await this.getHttpRequest(url, token);
+    return data;
+  }
+
+  async getOrderProductByDiscount(
+    userId: number,
+    product_id: number,
+    order?: string,
+  ) {
+    const user = await this.isUserValid(userId);
+    const { user_id, token } = user;
+
+    const url = `https://api.nuvemshop.com.br/v1/${user_id}/products/${product_id}/variants?fields=id,product_id,price,promotional_price,stock`;
+
+    const { data: arrayOfProductVariants } = await this.getHttpRequest(
+      url,
+      token,
+    );
+
+    if (arrayOfProductVariants.length > 1) {
+      return this.getOrderProducts(arrayOfProductVariants, order);
+    }
+    return arrayOfProductVariants;
   }
 }
