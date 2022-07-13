@@ -34,15 +34,15 @@ export class ProductsService {
   }
 
   async getHttpRequest(url: string, token: string) {
-    return await lastValueFrom(
-      this.httpService.get(url, {
+    return await this.httpService
+      .get(url, {
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'Awesome App {samela.silva@nuvemshop.com.br}',
           Authentication: `bearer ${token}`,
         },
-      }),
-    );
+      })
+      .toPromise();
   }
 
   getValueOfDiscountAndIdVariants(data: []) {
