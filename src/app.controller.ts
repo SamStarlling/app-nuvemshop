@@ -6,8 +6,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  async generateAccessToken(@Query() query: { code: string }) {
-    const { code } = query;
+  async generateAccessToken(@Query('code') code: string) {
     return this.appService.generateAccessCredentials(code);
   }
 }
