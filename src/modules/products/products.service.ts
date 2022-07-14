@@ -1,4 +1,3 @@
-import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CredentialsEntity } from './../entities/credentials.entity';
 import {
