@@ -10,7 +10,7 @@ import { Repository } from 'typeorm';
 
 interface IProducts {
   product_id: number;
-  valueOfDiscount: string;
+  discountValue: string;
   id: number;
   price: string;
   promotional_price: string;
@@ -47,14 +47,20 @@ export class ProductsService {
   getValueOfDiscountAndIdVariants(data: []) {
     const arrayOfDiscountAndId = [];
     data.map((product) => {
-      const { id, product_id, price, promotional_price, stock } = product;
-      const valueOfDiscount = !promotional_price
+      const {
+        id: variant_id,
+        product_id,
+        price,
+        promotional_price,
+        stock,
+      } = product;
+      const discountValue = !promotional_price
         ? 0
         : (price - promotional_price).toFixed(2);
       arrayOfDiscountAndId.push({
+        discountValue,
         product_id,
-        valueOfDiscount,
-        id,
+        variant_id,
         price,
         promotional_price,
         stock,
@@ -64,17 +70,17 @@ export class ProductsService {
   }
 
   getCompareOfProductsToMajor(product1: IProducts, product2: IProducts) {
-    if (product1.valueOfDiscount > product2.valueOfDiscount) return -1;
-    if (product1.valueOfDiscount < product2.valueOfDiscount) return 1;
-    if (product1.valueOfDiscount === product2.valueOfDiscount) return 0;
-    if (!product1.valueOfDiscount) return +1;
+    if (product1.discountValue > product2.discountValue) return -1;
+    if (product1.discountValue < product2.discountValue) return 1;
+    if (product1.discountValue === product2.discountValue) return 0;
+    if (!product1.discountValue) return +1;
   }
 
   getCompareOfProductsToMinor(product1: IProducts, product2: IProducts) {
-    if (product1.valueOfDiscount < product2.valueOfDiscount) return -1;
-    if (product1.valueOfDiscount > product2.valueOfDiscount) return 1;
-    if (product1.valueOfDiscount === product2.valueOfDiscount) return 0;
-    if (!product1.valueOfDiscount) return +1;
+    if (product1.discountValue < product2.discountValue) return -1;
+    if (product1.discountValue > product2.discountValue) return 1;
+    if (product1.discountValue === product2.discountValue) return 0;
+    if (!product1.discountValue) return +1;
   }
 
   getOrderProducts(data: [], order: string) {
